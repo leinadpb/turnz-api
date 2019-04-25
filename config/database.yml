@@ -7,24 +7,24 @@
 default: &default
   adapter: postgresql
   encoding: unicode
-  host: localhost
+  host: <%= ENV['DB_HOST'] %>
   port: 5432
   pool: 100
   timeout: 5000
-  username: ppgdeveloper2
-  password: water12
+  username: <%= ENV['DB_USER'] %>
+  password: <%= ENV['DB_PASSWORD'] %>
 
 development:
   <<: *default
-  database: turnzdb
+  database: turnzdb_development
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
 # Do not set this db to the same as development or production.
 test:
   <<: *default
-  database: turnzdb
+  database: turnzdb_test
 
 production:
   <<: *default
-  database: turnzdb
+  database: turnzdb_production

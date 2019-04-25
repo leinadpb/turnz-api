@@ -1,0 +1,81 @@
+version: '2.1'
+
+# ACTUAL CONFIGURATION
+services:
+  # DATABASE CONFIGURATION
+  psql:
+    command: postgres -c logging_collector=on
+      -c log_min_duration_statement=0
+      -c log_directory='/var/log/postgresql'
+      -c log_min_messages='WARNING'
+      -c log_rotation_age='1d'
+      -c log_rotation_size='1GB'
+    container_name: turnz-psql
+    hostname: psql
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: 'yujhUYjkuiloOPppK'
+    ports:
+      - "5432:5432"
+    volumes:
+      - psql:/var/log/postgresql
+    networks:
+      - elk
+      - api
+
+  redis:
+    user: root
+    restart: always
+    command: '--logfile /var/log/redis/redis-server.log'
+    container_name: turnz-redis
+    build:
+      context: config/docker/redis
+    logging:
+      driver: "json-file"
+    volumes:
+      - redis:/var/log/redis
+    ports:
+      - '6379:6379'
+    networks:
+      - api
+
+  rails:
+    restart: always
+    user: root
+    container_name: turnz-api
+    build: .
+    command: >
+      bash -c "gem install bundler
+      && bundle check || bundle install
+      && CONFIGURATION=true bundle exec rails db:create
+      && CONFIGURATION=true bundle exec rails db:migrate
+      && bundle exec rails server -b 0.0.0.0"
+    volumes:
+      - .:/turnz-api
+    environment:
+      - DB_HOST=psql
+      - DB_PASSWORD=yujhUYjkuiloOPppK
+      - DB_USER=postgres
+      - JOB_WORKER_URL=redis://redis:6379/0
+      - PORT=3000
+    depends_on:
+      - psql
+    ports:
+      - "3000:3000"
+    networks:
+      - api
+
+networks:
+  elk:
+    driver: bridge
+  api:
+    driver: bridge
+
+volumes:
+  psql:
+    driver: local
+  nginx:
+    driver: local
+  redis:
+    driver: local
